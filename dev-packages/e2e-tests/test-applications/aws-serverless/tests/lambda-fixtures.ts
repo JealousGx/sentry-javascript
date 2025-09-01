@@ -49,7 +49,7 @@ export const test = base.extend<{ testEnvironment: LocalLambdaStack; lambdaClien
       console.log(`[testEnvironment fixture] Running SAM with args: ${args.join(' ')}`);
 
       const samProcess = spawn('sam', args, {
-        stdio: ['ignore', debugLog.fd, debugLog.fd],
+        stdio: process.env.CI ? 'inherit' : ['ignore', debugLog.fd, debugLog.fd],
       });
 
       try {
