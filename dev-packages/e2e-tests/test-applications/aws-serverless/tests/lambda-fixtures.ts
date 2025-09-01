@@ -39,7 +39,7 @@ export const test = base.extend<{ testEnvironment: LocalLambdaStack; lambdaClien
         'EAGER',
         '--docker-network',
         DOCKER_NETWORK_NAME,
-        '--skip-pull-image',
+        // '--skip-pull-image',
       ];
 
       if (process.env.NODE_VERSION) {
