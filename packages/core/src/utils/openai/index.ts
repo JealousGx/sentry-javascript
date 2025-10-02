@@ -50,7 +50,7 @@ function extractRequestAttributes(args: unknown[], methodPath: string): Record<s
   const attributes: Record<string, unknown> = {
     [GEN_AI_SYSTEM_ATTRIBUTE]: 'openai',
     [GEN_AI_OPERATION_NAME_ATTRIBUTE]: getOperationName(methodPath),
-    [SEMANTIC_ATTRIBUTE_SENTRY_ORIGIN]: 'auto.function.openai',
+    [SEMANTIC_ATTRIBUTE_SENTRY_ORIGIN]: 'auto.ai.openai',
   };
 
   // Chat completion API accepts web_search_options and tools as parameters
@@ -201,7 +201,7 @@ function addRequestAttributes(span: Span, params: Record<string, unknown>): void
 function getOptionsFromIntegration(): OpenAiOptions {
   const scope = getCurrentScope();
   const client = scope.getClient();
-  const integration = client?.getIntegrationByName(OPENAI_INTEGRATION_NAME) as OpenAiIntegration | undefined;
+  const integration = client?.getIntegrationByName<OpenAiIntegration>(OPENAI_INTEGRATION_NAME);
   const shouldRecordInputsAndOutputs = integration ? Boolean(client?.getOptions().sendDefaultPii) : false;
 
   return {
@@ -258,6 +258,10 @@ function instrumentMethod<T extends unknown[], R>(
             captureException(error, {
               mechanism: {
                 handled: false,
+                type: 'auto.ai.openai.stream',
+                data: {
+                  function: methodPath,
+                },
               },
             });
             span.end();
@@ -283,7 +287,15 @@ function instrumentMethod<T extends unknown[], R>(
             addResponseAttributes(span, result, finalOptions.recordOutputs);
             return result;
           } catch (error) {
-            captureException(error);
+            captureException(error, {
+              mechanism: {
+                handled: false,
+                type: 'auto.ai.openai',
+                data: {
+                  function: methodPath,
+                },
+              },
+            });
             throw error;
           }
         },
@@ -312,7 +324,7 @@ function createDeepProxy<T extends object>(target: T, currentPath = '', options?
       }
 
       if (value && typeof value === 'object') {
-        return createDeepProxy(value as object, methodPath, options);
+        return createDeepProxy(value, methodPath, options);
       }
 
       return value;
